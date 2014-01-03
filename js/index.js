@@ -20,12 +20,12 @@ var circlesCenterX, circlesCenterY;   // variables to hold the center point, so 
 var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
 var src = assetsPath + "05-Binrpilot-Underground.mp3";  // set up our source
-src = assetsPath + "Bohemian.mp3";  // set up our source
+//src = assetsPath + "Bohemian.mp3";  // set up our source
 //src = assetsPath + "CantStopNow.mp3";  // set up our source
 //src = assetsPath + "Puppy.mp3";  // set up our source
 //src = assetsPath + "Apollo.mp3";  // set up our source
 //src = assetsPath + "New-Blood.mp3";  // set up our source
-src = assetsPath + "Throttle-You-Make-Me.mp3";  // set up our source
+//src = assetsPath + "Throttle-You-Make-Me.mp3";  // set up our source
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
