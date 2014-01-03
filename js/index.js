@@ -9,8 +9,8 @@ var COLOR_CHANGE_THRESHOLD = 20;    // amount of change before we change color
 var WAVE_EMIT_THRESHOLD = 20;   // amount of positive change before we emit a wave
 var WAVE_SCALE = 0.03;  // amount to scale wave per tick
 var WAVE_RADIUS = 200; // the radius the wave images will be drawn with
-var WAVE_THICKNESS = 3;
-var WAVE_SPEED = 1;
+var WAVE_THICKNESS = 0.5;
+var WAVE_SPEED = 0.8;
 
 // global variables
 var stage;              // the stage we draw everything to
@@ -26,6 +26,9 @@ var src = assetsPath + "05-Binrpilot-Underground.mp3";  // set up our source
 //src = assetsPath + "Apollo.mp3";  // set up our source
 //src = assetsPath + "New-Blood.mp3";  // set up our source
 //src = assetsPath + "Throttle-You-Make-Me.mp3";  // set up our source
+//src = assetsPath + "Scary-Monsters.mp3";  // set up our source
+//src = assetsPath + "Fight-Fire-with-Fire.mp3";  // set up our source
+//src = assetsPath + "Helena-Beat.mp3";  // set up our source
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
@@ -222,10 +225,10 @@ function tick(evt) {
 
         color = createjs.Graphics.getHSL(360-(i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
         var rectWidth = lastRadius*2;
-        var rectHeigth = lastRadius/2;
+        var rectHeigth = lastRadius*2;
         var rectRadius = rectWidth*100;
         var rectY = circlesCenterY+100;
-        var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(circlesCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,0,0,rectRadius,rectRadius).endFill();
+        var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(circlesCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
         mouthRectangles[i].graphics = g;
 
     }
