@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WTF??!?!</title>
+
+        <meta property="og:image" content="http://franciscodias.net/experiments/wtf/assets/pineappleQuestIII.png" />
+
+    	<link rel="stylesheet" type="text/css" href="css/styles.css" />
+    </head>
+
+    <body onload="init()">
+
+    	<div id="error">
+    		<h1>Sorry!</h1>
+    		<p>SoundJS or Web Audio is not currently supported in your browser.
+            Currently only Chrome and iOS6 Safari support the Web Audio API, and content must be run from a server.</p>
+    		<p>Please <a href="http://github.com/CreateJS/SoundJS/issues" target="_blank">log a bug</a>
+    			with the device and browser you are using if you see this in Chrome or Safari.  Thank you.</p>
+    	</div>
+
+        <div class="canvasHolder">
+            <canvas id="testCanvas" width="960" height="400"></canvas>
+        </div>
+
+        <script type="text/javascript" src="js/vendor/easeljs-NEXT.min.js"></script>
+
+    	<!-- Note: All SoundJS classes are listed here: -->
+    	<script type="text/javascript" src="js/vendor/createjs/utils/Proxy.js"></script>
+    	<script type="text/javascript" src="js/vendor/createjs/utils/IndexOf.js"></script>
+    	<script type="text/javascript" src="js/vendor/createjs/events/Event.js"></script>
+    	<script type="text/javascript" src="js/vendor/createjs/events/EventDispatcher.js"></script>
+        <script type="text/javascript" src="js/vendor/soundjs/Sound.js"></script>
+        <script type="text/javascript" src="js/vendor/soundjs/WebAudioPlugin.js"></script>
+        <script type="text/javascript" src="js/vendor/soundjs/HTMLAudioPlugin.js"></script>
+
+
+        <!-- We also provide hosted minified versions of all CreateJS libraries.
+            http://code.createjs.com -->
+
+        <script type="text/javascript" src="js/index.js"></script>
+
+    </body>
+    
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-22227995-7', 'franciscodias.net');
+      ga('send', 'pageview');
+
+    </script>
+</html>
