@@ -2,7 +2,7 @@
 var FFTSIZE = 32;      // number of samples for the analyser node FFT, min 32
 var TICK_FREQ = 20;     // how often to run the tick function, in milliseconds
 var CIRCLES = 8;        // the number of circles to draw.  This is also the amount to break the files into, so FFTSIZE/2 needs to divide by this evenly
-var RADIUS_FACTOR = 120; // the radius of the circles, factored for which ring we are drawing
+var RADIUS_FACTOR = 80; // the radius of the circles, factored for which ring we are drawing
 var MIN_RADIUS = 1;     // the minimum radius of each circle
 var HUE_VARIANCE = 120;  // amount hue can vary by
 var COLOR_CHANGE_THRESHOLD = 20;    // amount of change before we change color
@@ -16,30 +16,33 @@ var WAVE_SPEED = 0.8;
 var stage;              // the stage we draw everything to
 var h, w;               // variables to store the width and height of the canvas
 var centerX, centerY;   // variables to hold the center point, so that tick is quicker
-var circlesCenterX, circlesCenterY;   // variables to hold the center point, so that tick is quicker
+var faceCenterX, faceCenterY;   // variables to hold the center point, so that tick is quicker
 var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
-var src = assetsPath + "05-Binrpilot-Underground.mp3";  // set up our source
-//src = assetsPath + "Bohemian.mp3";  // set up our source
-//src = assetsPath + "CantStopNow.mp3";  // set up our source
-//src = assetsPath + "Puppy.mp3";  // set up our source
-//src = assetsPath + "Apollo.mp3";  // set up our source
-//src = assetsPath + "New-Blood.mp3";  // set up our source
-//src = assetsPath + "Throttle-You-Make-Me.mp3";  // set up our source
-//src = assetsPath + "Scary-Monsters.mp3";  // set up our source
-//src = assetsPath + "Fight-Fire-with-Fire.mp3";  // set up our source
-//src = assetsPath + "Helena-Beat.mp3";  // set up our source
+var src;
+var songs = ["05-Binrpilot-Underground.mp3"];
+//var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
+//              "Apollo.mp3","Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
+//              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
 var mouthRectangles = {};       // object has of circles shapes
 var leftEyeCircles = {};       // object has of circles shapes
 var rightEyeCircles = {};       // object has of circles shapes
+var leftEyeLaser;       // object has of circles shapes
+var rightEyeLaser;       // object has of circles shapes
 var circleHue = 300;   // the base color hue used when drawing circles, which can change
 var waves = new createjs.Container();   // container to store waves we draw coming off of circles
 var circleFreqChunk;    // The chunk of freqByteData array that is computed per circle
 var dataAverage = [42,42,42,42];   // an array recording data for the last 4 ticks
 var waveImgs = []; // array of wave images with different stroke thicknesses
+
+var EYES_SPEED = 0.15;
+    eyesAngle = 0,
+    eyesMoveDirection = 0;
+    irisRadius = 0;
+
 
 function init() {
     if (window.top != window) {
@@ -60,7 +63,7 @@ function init() {
     window.addEventListener('resize', updateCoordinates);
     
     // a message on our stage that we use to let the user know what is going on.  Useful when preloading.
-    messageField = new createjs.Text("Loading Audio", "bold 24px Arial", "#FFFFFF");
+    messageField = new createjs.Text("Loading Audio \n\n Yep, this can take some time...", "bold 24px Arial", "#FFFFFF");
     messageField.maxWidth = w;
     messageField.textAlign = "center";  // NOTE this puts the registration point of the textField at the center
     messageField.x = centerX;
@@ -68,8 +71,12 @@ function init() {
     stage.addChild(messageField);
     stage.update();     //update the stage to show text
 
+    src = assetsPath + songs[Math.floor(Math.random() * songs.length)];
+
     createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
     createjs.Sound.registerSound(src);  // register sound, which preloads by default
+    console.log("Loading", src);
+
 }
 
 function getParameterByName(name) {
@@ -92,10 +99,10 @@ function updateCoordinates () {
     centerX = w >> 1;
     centerY = h >> 1;
 
-    //circlesCenterX = canvas.width;
-    //circlesCenterY = 0;
-    circlesCenterX = centerX;
-    circlesCenterY = centerY;
+    //faceCenterX = canvas.width;
+    //faceCenterY = 0;
+    faceCenterX = centerX;
+    faceCenterY = centerY;
 }
 
 function handleLoad(evt) {
@@ -123,30 +130,76 @@ function handleLoad(evt) {
 
     // enable touch interactions if supported on the current device, and display appropriate message
     if (createjs.Touch.enable(stage)) {
-        messageField.text = "Touch to start";
+        messageField.text = "Touch to start \nand then to control the eyes";
     } else {
-        messageField.text = "Click to start";
+        messageField.text = "Click to start\n\n Use the arrow keys to rotate the eyes!";
     }
     stage.update();     //update the stage to show text
 
     // wrap our sound playing in a click event so we can be played on mobile devices
-    stage.addEventListener("stagemousedown", startPlayback);
+    stage.addEventListener("stagemousedown", onMouseDown);
+    stage.addEventListener("stagemouseup", onMouseUp);
+
+    window.onkeydown = onKeyDown;
+    window.onkeyup = onKeyUp;
+}
+
+function onKeyDown(evt) {
+    if(!soundInstance) { 
+        startPlayback();
+        return;
+    }
+
+    if(evt.keyCode == 39 || evt.keyCode == 65){
+        eyesMoveDirection = -1;
+    } else if(evt.keyCode == 37 || evt.keyCode == 68){
+        if(eyesAngle == 0) { eyesAngle = 3.14; }
+        eyesMoveDirection = +1;
+    } else if(evt.keyCode == 32){
+        stopSound();
+        if(waves.children.length > 0) {
+            setTimeout(startSound,500); 
+        } else {
+            startSound();
+        }
+    } else if(evt.keyCode == 27){
+        stopSound();
+    }
+}
+
+function onKeyUp(evt){
+    eyesMoveDirection = 0;
+}
+
+function onMouseDown(evt){
+    if(!soundInstance) { 
+        startPlayback();
+        return;
+    }
+
+    if(evt.stageX > centerX){
+        eyesMoveDirection = -1;
+    } else {
+        if(eyesAngle == 0) { eyesAngle = 3.14; }
+        eyesMoveDirection = +1;
+    }
+}
+
+function onMouseUp(evt){
+    eyesMoveDirection = 0;
 }
 
 // this will start our playback in response to a user click, allowing this demo to work on mobile devices
-function startPlayback(evt) {
-    // we only start once, so remove the click/touch listener
-    stage.removeEventListener("stagemousedown", startPlayback);
-
+function startPlayback() {
     if(soundInstance) {return;} // if this is defined, we've already started playing.  This is very unlikely to happen.
     
     // we're starting, so we can remove the message
     stage.removeChild(messageField);
 
     // start playing the sound we just loaded, looping indefinitely
-    soundInstance = createjs.Sound.play(src, {loop:-1});
+    soundInstance = createjs.Sound.play(src);
 
-    stage.addEventListener("stagemousedown", stopSound);
+    stage.addEventListener("dblclick", stopSound);
 
     // add waves container to stage
     stage.addChild(waves);
@@ -171,28 +224,82 @@ function startPlayback(evt) {
         stage.addChild(rectangle);
     }
         
-    
+    var laser = leftEyeLaser = new createjs.Shape();
+    laser.compositeOperation = "lighter";
+    stage.addChild(leftEyeLaser);
+    laser = rightEyeLaser = new createjs.Shape();
+    laser.compositeOperation = "lighter";
+    stage.addChild(rightEyeLaser);
+
     // start the tick and point it at the window so we can do some work before updating the stage:
     createjs.Ticker.addEventListener("tick", tick);
     createjs.Ticker.setInterval(TICK_FREQ);
 }
 
 function stopSound() {
-    stage.removeEventListener("stagemousedown", stopSound);
+    stage.removeEventListener("dblclick", stopSound);
     
-    createjs.Ticker.removeEventListener("tick", tick);
+    //createjs.Ticker.removeEventListener("tick", tick);
     createjs.Sound.stop();
 
-    stage.addEventListener("stagemousedown", startSound);
+    eyesAngle = 0;
+    eyesMoveDirection = 0;
+
+    stage.addEventListener("dblclick", startSound);
 }
 
 function startSound() {
-    stage.removeEventListener("stagemousedown", startSound);
+    stage.removeEventListener("dblclick", startSound);
 
-    createjs.Ticker.addEventListener("tick", tick);
-    soundInstance = createjs.Sound.play(src, {loop:-1});
+    //createjs.Ticker.addEventListener("tick", tick);
+    soundInstance = createjs.Sound.play(src);
 
-    stage.addEventListener("stagemousedown", stopSound);
+    stage.addEventListener("dblclick", stopSound);
+}
+
+function getEyeCircleGraphics(eye, i, color, lastRadius) {
+    var cx = faceCenterX + eye * 150;
+    var cy = faceCenterY - 100;
+
+    if(i < CIRCLES - 1 && eyesAngle != 0) {
+        cx += (irisRadius-lastRadius)*Math.cos(eyesAngle);
+        cy += (irisRadius-lastRadius)*Math.sin(eyesAngle);
+    }
+
+    return new createjs.Graphics().beginFill(color).drawCircle(cx,cy, lastRadius).endFill();
+}
+
+function getLaserGraphics(eye, lastRadius) {
+    if(eyesAngle != 0) {
+        var cx = faceCenterX + eye * 150;
+        var cy = faceCenterY - 100;
+
+        var laserLenght = (irisRadius*irisRadius)/30,
+            laserDistortion = 0.1*(irisRadius/50);
+        
+        var sx = cx+(irisRadius)*Math.cos(eyesAngle),
+            sy = cy+(irisRadius)*Math.sin(eyesAngle),
+            px = cx+laserLenght*Math.cos(eyesAngle+laserDistortion),
+            py = cy+laserLenght*Math.sin(eyesAngle+laserDistortion),
+            mx = cx+1.2*laserLenght*Math.cos(eyesAngle),
+            my = cy+1.2*laserLenght*Math.sin(eyesAngle),
+            fx = cx+laserLenght*Math.cos(eyesAngle-laserDistortion),
+            fy = cy+laserLenght*Math.sin(eyesAngle-laserDistortion);
+
+        var color = createjs.Graphics.getRGB(200, 200, 200, 200);
+            
+        var graphics = new createjs.Graphics();
+        graphics.beginFill(color);
+        graphics.moveTo(sx,sy);
+        graphics.lineTo(fx,fy);
+        //graphics.lineTo(mx,my);
+        //graphics.lineTo(px,py);
+        graphics.arcTo(mx,my,px,py,Math.sqrt((px-fx)*(px-fx)+(py-fy)*(py-fy))/2)
+        graphics.lineTo(sx,sy);
+        graphics.endFill();
+
+        return graphics;
+    }
 }
 
 function tick(evt) {
@@ -218,20 +325,21 @@ function tick(evt) {
         // draw circle
         lastRadius += freqSum*RADIUS_FACTOR + MIN_RADIUS;
         var color = createjs.Graphics.getHSL((i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
-        var gl = new createjs.Graphics().beginFill(color).drawCircle(circlesCenterX-150,circlesCenterY-100, lastRadius).endFill();
-        var gr = new createjs.Graphics().beginFill(color).drawCircle(circlesCenterX+150,circlesCenterY-100, lastRadius).endFill();
-        leftEyeCircles[i].graphics = gl;
-        rightEyeCircles[i].graphics = gr;
+        leftEyeCircles[i].graphics = getEyeCircleGraphics(-1, i, color, lastRadius);
+        rightEyeCircles[i].graphics = getEyeCircleGraphics(+1, i, color, lastRadius);
 
         color = createjs.Graphics.getHSL(360-(i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
-        var rectWidth = lastRadius*2;
-        var rectHeigth = lastRadius*2;
+        var rectWidth = lastRadius*1.5;
+        var rectHeigth = lastRadius*1.75;
         var rectRadius = rectWidth*100;
-        var rectY = circlesCenterY+100;
-        var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(circlesCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
+        var rectY = faceCenterY+100;
+        var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(faceCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
         mouthRectangles[i].graphics = g;
-
     }
+    leftEyeLaser.graphics = getLaserGraphics(1,lastRadius);
+    rightEyeLaser.graphics = getLaserGraphics(-1,lastRadius);
+
+    irisRadius = lastRadius - lastRadius/5;
 
     // update our dataAverage, by removing the first element and pushing in the new last element
     dataAverage.shift();
@@ -260,8 +368,8 @@ function tick(evt) {
 
         // create the wave, and center it on screen:
         var wave = new createjs.Bitmap(getWaveImg(thickness, color));
-        wave.x = circlesCenterX;
-        wave.y = circlesCenterY;
+        wave.x = faceCenterX;
+        wave.y = faceCenterY;
         wave.regX = wave.regY = WAVE_RADIUS + thickness;
         
         // set the expansion speed as a factor of the value difference:
@@ -288,6 +396,8 @@ function tick(evt) {
 
     // draw the updates to stage
     stage.update();
+
+    eyesAngle += EYES_SPEED * eyesMoveDirection;
 }
 
 function getWaveImg(thickness, color) {
