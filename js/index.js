@@ -20,10 +20,10 @@ var faceCenterX, faceCenterY;   // variables to hold the center point, so that t
 var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
 var src;
-var songs = ["05-Binrpilot-Underground.mp3"];
-//var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
-//              "Apollo.mp3","Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
-//              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
+//var songs = ["05-Binrpilot-Underground.mp3"];
+var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
+              "Apollo.mp3","Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
+              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
@@ -42,6 +42,9 @@ var EYES_SPEED = 0.15;
     eyesAngle = 0,
     eyesMoveDirection = 0;
     irisRadius = 0;
+
+var asteroids = [],
+    asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
 
 function init() {
@@ -203,6 +206,7 @@ function startPlayback() {
 
     // add waves container to stage
     stage.addChild(waves);
+    stage.addChild(asteroidsContainer);
 
     // create circles so they are persistent
     for(var i=0; i<CIRCLES; i++) {
@@ -223,7 +227,7 @@ function startPlayback() {
         rectangle.compositeOperation = "lighter";
         stage.addChild(rectangle);
     }
-        
+    
     var laser = leftEyeLaser = new createjs.Shape();
     laser.compositeOperation = "lighter";
     stage.addChild(leftEyeLaser);
@@ -300,6 +304,37 @@ function getLaserGraphics(eye, lastRadius) {
 
         return graphics;
     }
+}
+
+function sign(p1x,p1y,p2x,p2y,p3x,p3y)
+{
+  return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+}
+
+function PointInTriangle(eye, lastRadius, asteroid)
+{
+    var ptx = asteroid.getX(),
+        pty = asteroid.getY();
+
+    var b1, b2, b3;
+    var cx = faceCenterX + eye * 150;
+    var cy = faceCenterY - 100;
+
+    var laserLenght = (irisRadius*irisRadius)/30,
+        laserDistortion = 0.1*(irisRadius/50);
+
+    var v1x = cx+(irisRadius)*Math.cos(eyesAngle),
+        v1y = cy+(irisRadius)*Math.sin(eyesAngle),
+        v2x = cx+laserLenght*Math.cos(eyesAngle+laserDistortion),
+        v2y = cy+laserLenght*Math.sin(eyesAngle+laserDistortion),
+        v3x = cx+laserLenght*Math.cos(eyesAngle-laserDistortion),
+        v3y = cy+laserLenght*Math.sin(eyesAngle-laserDistortion);
+
+    b1 = sign(ptx,pty, v1x,v1y, v2x,v2y) < 0.0;
+    b2 = sign(ptx,pty, v2x,v2y, v3x,v3y) < 0.0;
+    b3 = sign(ptx,pty, v3x,v3y, v1x,v1y) < 0.0;
+
+  return ((b1 == b2) && (b2 == b3));
 }
 
 function tick(evt) {
@@ -394,6 +429,32 @@ function tick(evt) {
         }
     }
 
+    for(var i = 0; i<asteroids.length; i++){
+        asteroids[i].update(i);
+
+        if(PointInTriangle(-1, lastRadius, asteroids[i]) || PointInTriangle(1, lastRadius, asteroids[i])) {
+            asteroids[i].destroyed = true;
+        }
+
+        if(asteroids[i].destroyed) {
+            asteroidsContainer.removeChild(asteroids[i].shape);
+        }
+    }
+    
+    function isAlive(element) {
+      return !element.destroyed;
+    }
+    
+    asteroids = asteroids.filter(isAlive);
+
+    if(dataDiff > 20) {
+        if(getRandomInt(0,1)) {  
+            asteroids.push(new Asteroid(getRandomInt(0,1)*w,Math.random()*h));
+        } else {
+            asteroids.push(new Asteroid(Math.random()*w, getRandomInt(0,1)*h));
+        }
+    }
+
     // draw the updates to stage
     stage.update();
 
@@ -419,4 +480,12 @@ function getWaveImg(thickness, color) {
     // save the image into our list, and return it:
     waveImgs[thickness] = waveShape.cacheCanvas
     return waveShape.cacheCanvas;
+}
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomPlusOrMinus() {
+        return Math.random() < 0.5 ? -1 : 1;
 }
