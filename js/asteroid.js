@@ -1,15 +1,16 @@
-var Asteroid = function(startX, startY) {
-	var x = startX,
-		y = startY,
-		startX = startX,
-		startY = startY,
+var Asteroid = function(details) {
+	var x = details.x,
+		y = details.y,
+		startX = x,
+		startY = y,
 		angle = -90,
-		color = "#FFF", 
-		sides = getRandomInt(3,6),
-		radius = getRandomInt(5,10),
+		sides = details.sides,
+		color = details.color, 
+		radius = getRandomInt(10,20),
 		speed = 0.005,
 		shape = new createjs.Shape(),
 		destroyed = false,
+		hit = false,
 		id;
 
     shape.compositeOperation = "lighter";
@@ -42,17 +43,33 @@ var Asteroid = function(startX, startY) {
 
 		if(distance < 200){
 			this.destroyed = true;
+			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
+			return;
+		}
+		
+
+		if(this.radius < 1){
+			this.destroyed = true;
+			createjs.Sound.play("assets/onHit.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 0.05});
 			return;
 		}
 
-		this.radius += 0.1;
+		if(this.hit) {
+			this.radius -= 2;
+		} else if(distance < 250) {
+			this.radius += 10;
+		} else {
+			this.radius += 0.1;
+		}
+
+
 		angle += 10;
 
 		x = x + this.speed*odx;
 		y = y + this.speed*ody;
 
 		var graphics = new createjs.Graphics();
-		graphics.beginFill(color).drawPolyStar(x, y, this.radius, this.sides, getRandomInt(0,1)*0.5, angle);
+		graphics.beginFill(color).drawPolyStar(x, y, this.radius, this.sides, 0, angle);
 
 		this.shape.graphics = graphics;
 	};
@@ -69,6 +86,7 @@ var Asteroid = function(startX, startY) {
 		shape: shape,
 		update: update,
 		destroyed: destroyed,
+		hit: hit,
 		id: id
 	}
 };

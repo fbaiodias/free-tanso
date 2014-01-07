@@ -22,7 +22,7 @@ var assetsPath = "assets/"; // Create a single item to load.
 var src;
 //var songs = ["05-Binrpilot-Underground.mp3"];
 var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
-              "Apollo.mp3","Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
+              "Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
               "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
@@ -47,6 +47,7 @@ var leftDown = false,
     rightDown = false;
 
 var asteroids = [],
+    asteroidsLine = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
 
@@ -82,6 +83,10 @@ function init() {
     createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
     createjs.Sound.registerSound(src);  // register sound, which preloads by default
     console.log("Loading", src);
+
+    createjs.Sound.play("assets/onDestroy.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
+    createjs.Sound.play("assets/onHit.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
+    createjs.Sound.play("assets/onStart.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
 
 }
 
@@ -148,6 +153,8 @@ function handleLoad(evt) {
 
     window.onkeydown = onKeyDown;
     window.onkeyup = onKeyUp;
+
+    createjs.Sound.play("assets/onStart.mp3", createjs.Sound.INTERRUPT_ANY);
 }
 
 function onKeyDown(evt) {
@@ -171,7 +178,7 @@ function onKeyDown(evt) {
             startSound();
         }
     } else if(evt.keyCode == 27){
-        stopSound();
+        location.reload(false);
     }
 }
 
@@ -470,8 +477,8 @@ function tick(evt) {
     for(var i = 0; i<asteroids.length; i++){
         asteroids[i].update(i);
 
-        if(PointInTriangle(-1, lastRadius, asteroids[i]) || PointInTriangle(1, lastRadius, asteroids[i])) {
-            asteroids[i].destroyed = true;
+        if(eyesAngle != 0 && (PointInTriangle(-1, lastRadius, asteroids[i]) || PointInTriangle(1, lastRadius, asteroids[i]))) {
+            asteroids[i].hit = true;
         }
 
         if(asteroids[i].destroyed) {
@@ -486,11 +493,7 @@ function tick(evt) {
     asteroids = asteroids.filter(isAlive);
 
     if(dataDiff > 20) {
-        if(getRandomInt(0,1)) {  
-            asteroids.push(new Asteroid(getRandomInt(0,1)*w,Math.random()*h));
-        } else {
-            asteroids.push(new Asteroid(Math.random()*w, getRandomInt(0,1)*h));
-        }
+        asteroids.push(new Asteroid(getNextAsteroid()));
     }
 
     // draw the updates to stage
@@ -518,6 +521,29 @@ function getWaveImg(thickness, color) {
     // save the image into our list, and return it:
     waveImgs[thickness] = waveShape.cacheCanvas
     return waveShape.cacheCanvas;
+}
+
+function getNextAsteroid() {
+    if (asteroidsLine.length > 0) {
+        return asteroidsLine.pop();
+    } else {
+        var lineSide = getRandomInt(0,1);
+        var lineHeight = getRandomInt(0,h);
+        var lineCenter = getRandomInt(0,h);
+        var lineElementsNumber = getRandomInt(3,8);
+        var lineColor = createjs.Graphics.getHSL((lineElementsNumber-3)*50, 100, 50);
+
+        for(var i=0; i<lineElementsNumber; i++){
+            asteroidsLine.push({
+                x: lineSide*w,
+                y: (lineCenter-lineHeight/2)+i*(lineHeight/lineElementsNumber),
+                sides: lineElementsNumber,
+                color: lineColor
+            });
+        }
+
+        return asteroidsLine.pop();
+    }
 }
 
 function getRandomInt(min, max) {
