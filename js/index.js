@@ -43,6 +43,9 @@ var EYES_SPEED = 0.15;
     eyesMoveDirection = 0;
     irisRadius = 0;
 
+var leftDown = false,
+    rightDown = false;
+
 var asteroids = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
@@ -155,9 +158,11 @@ function onKeyDown(evt) {
 
     if(evt.keyCode == 39 || evt.keyCode == 65){
         eyesMoveDirection = -1;
+        rightDown = true;
     } else if(evt.keyCode == 37 || evt.keyCode == 68){
         if(eyesAngle == 0) { eyesAngle = 3.14; }
         eyesMoveDirection = +1;
+        leftDown = true;
     } else if(evt.keyCode == 32){
         stopSound();
         if(waves.children.length > 0) {
@@ -172,6 +177,23 @@ function onKeyDown(evt) {
 
 function onKeyUp(evt){
     eyesMoveDirection = 0;
+
+    // Right key
+    if(evt.keyCode == 39 || evt.keyCode == 65){
+        rightDown = false;
+
+        if(leftDown) {
+            eyesMoveDirection = +1;
+        }
+    }
+    // Left key
+    else if(evt.keyCode == 37 || evt.keyCode == 68){
+        leftDown = false;
+
+        if(rightDown) {
+            eyesMoveDirection = -1;
+        }
+    }
 }
 
 function onMouseDown(evt){
@@ -182,14 +204,30 @@ function onMouseDown(evt){
 
     if(evt.stageX > centerX){
         eyesMoveDirection = -1;
+        rightDown = true;
     } else {
         if(eyesAngle == 0) { eyesAngle = 3.14; }
         eyesMoveDirection = +1;
+        leftDown = true;
     }
 }
 
 function onMouseUp(evt){
     eyesMoveDirection = 0;
+
+    if(evt.stageX > centerX){
+        rightDown = false;
+
+        if(leftDown) {
+            eyesMoveDirection = +1;
+        }
+    } else {
+        leftDown = false;
+
+        if(rightDown) {
+            eyesMoveDirection = -1;
+        }
+    }
 }
 
 // this will start our playback in response to a user click, allowing this demo to work on mobile devices

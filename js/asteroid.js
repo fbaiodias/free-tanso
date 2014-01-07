@@ -5,8 +5,8 @@ var Asteroid = function(startX, startY) {
 		startY = startY,
 		angle = -90,
 		color = "#FFF", 
-		sides = 5,
-		radius = 5,
+		sides = getRandomInt(3,6),
+		radius = getRandomInt(5,10),
 		speed = 0.005,
 		shape = new createjs.Shape(),
 		destroyed = false,
@@ -52,7 +52,7 @@ var Asteroid = function(startX, startY) {
 		y = y + this.speed*ody;
 
 		var graphics = new createjs.Graphics();
-		graphics.beginFill(color).drawPolyStar(x, y, this.radius, this.sides, 0, angle);
+		graphics.beginFill(color).drawPolyStar(x, y, this.radius, this.sides, getRandomInt(0,1)*0.5, angle);
 
 		this.shape.graphics = graphics;
 	};
