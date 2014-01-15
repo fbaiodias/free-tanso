@@ -2,11 +2,11 @@
 var FFTSIZE = 32;      // number of samples for the analyser node FFT, min 32
 var TICK_FREQ = 20;     // how often to run the tick function, in milliseconds
 var CIRCLES = 8;        // the number of circles to draw.  This is also the amount to break the files into, so FFTSIZE/2 needs to divide by this evenly
-var RADIUS_FACTOR = 80; // the radius of the circles, factored for which ring we are drawing
+var RADIUS_FACTOR = 40; // the radius of the circles, factored for which ring we are drawing
 var MIN_RADIUS = 1;     // the minimum radius of each circle
 var HUE_VARIANCE = 120;  // amount hue can vary by
 var COLOR_CHANGE_THRESHOLD = 20;    // amount of change before we change color
-var WAVE_EMIT_THRESHOLD = 20;   // amount of positive change before we emit a wave
+var WAVE_EMIT_THRESHOLD = 10;   // amount of positive change before we emit a wave
 var WAVE_SCALE = 0.03;  // amount to scale wave per tick
 var WAVE_RADIUS = 200; // the radius the wave images will be drawn with
 var WAVE_THICKNESS = 0.5;
@@ -23,7 +23,8 @@ var src;
 //var songs = ["05-Binrpilot-Underground.mp3"];
 var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
               "Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
-              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
+              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3",
+              "Countdown.mp3", "Hexagon.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
@@ -33,18 +34,20 @@ var rightEyeCircles = {};       // object has of circles shapes
 var leftEyeLaser;       // object has of circles shapes
 var rightEyeLaser;       // object has of circles shapes
 var circleHue = 300;   // the base color hue used when drawing circles, which can change
-var waves = new createjs.Container();   // container to store waves we draw coming off of circles
 var circleFreqChunk;    // The chunk of freqByteData array that is computed per circle
 var dataAverage = [42,42,42,42];   // an array recording data for the last 4 ticks
 var waveImgs = []; // array of wave images with different stroke thicknesses
 
-var EYES_SPEED = 0.15;
+var EYES_SPEED = 0.1;
     eyesAngle = 0,
     eyesMoveDirection = 0;
     irisRadius = 0;
 
 var leftDown = false,
     rightDown = false;
+
+var waves = [],
+    wavesContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
 var asteroids = [],
     asteroidsLine = [],
@@ -78,7 +81,7 @@ function init() {
     stage.addChild(messageField);
     stage.update();     //update the stage to show text
 
-    src = assetsPath + songs[Math.floor(Math.random() * songs.length)];
+    src = getParameterByName("s") || assetsPath + songs[Math.floor(Math.random() * songs.length)];
 
     createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
     createjs.Sound.registerSound(src);  // register sound, which preloads by default
@@ -172,7 +175,7 @@ function onKeyDown(evt) {
         leftDown = true;
     } else if(evt.keyCode == 32){
         stopSound();
-        if(waves.children.length > 0) {
+        if(wavesContainer.children.length > 0) {
             setTimeout(startSound,500); 
         } else {
             startSound();
@@ -250,7 +253,7 @@ function startPlayback() {
     stage.addEventListener("dblclick", stopSound);
 
     // add waves container to stage
-    stage.addChild(waves);
+    stage.addChild(wavesContainer);
     stage.addChild(asteroidsContainer);
 
     // create circles so they are persistent
@@ -323,29 +326,36 @@ function getLaserGraphics(eye, lastRadius) {
         var cx = faceCenterX + eye * 150;
         var cy = faceCenterY - 100;
 
-        var laserLenght = (irisRadius*irisRadius)/30,
-            laserDistortion = 0.1*(irisRadius/50);
+        var laserLenght = w,
+            laserDistortion = 0.05*(irisRadius/50);
+
+        if(eyesMoveDirection == 0){
+            laserDistortion = 0
+        }
         
         var sx = cx+(irisRadius)*Math.cos(eyesAngle),
             sy = cy+(irisRadius)*Math.sin(eyesAngle),
-            px = cx+laserLenght*Math.cos(eyesAngle+laserDistortion),
-            py = cy+laserLenght*Math.sin(eyesAngle+laserDistortion),
-            mx = cx+1.2*laserLenght*Math.cos(eyesAngle),
-            my = cy+1.2*laserLenght*Math.sin(eyesAngle),
-            fx = cx+laserLenght*Math.cos(eyesAngle-laserDistortion),
-            fy = cy+laserLenght*Math.sin(eyesAngle-laserDistortion);
+            px = cx+laserLenght*Math.cos(eyesAngle),//+eyesMoveDirection*laserDistortion),
+            py = cy+laserLenght*Math.sin(eyesAngle),//+eyesMoveDirection*laserDistortion),
+            mx = cx+laserLenght*Math.cos(eyesAngle),
+            my = cy+laserLenght*Math.sin(eyesAngle),
+            fx = cx+laserLenght*Math.cos(eyesAngle),//+2*eyesMoveDirection*laserDistortion),
+            fy = cy+laserLenght*Math.sin(eyesAngle);//+2*eyesMoveDirection*laserDistortion);
 
-        var color = createjs.Graphics.getRGB(200, 200, 200, 200);
+        var color = createjs.Graphics.getRGB(255, 75, 75, 200);
             
         var graphics = new createjs.Graphics();
-        graphics.beginFill(color);
+        graphics.beginStroke(color);
+        graphics.setStrokeStyle(2)
         graphics.moveTo(sx,sy);
         graphics.lineTo(fx,fy);
-        //graphics.lineTo(mx,my);
-        //graphics.lineTo(px,py);
-        graphics.arcTo(mx,my,px,py,Math.sqrt((px-fx)*(px-fx)+(py-fy)*(py-fy))/2)
-        graphics.lineTo(sx,sy);
-        graphics.endFill();
+        graphics.setStrokeStyle(8)
+        graphics.moveTo(sx,sy);
+        graphics.lineTo(mx,my);
+        graphics.setStrokeStyle(12)
+        graphics.moveTo(sx,sy);
+        graphics.lineTo(px,py);
+        graphics.endStroke();
 
         return graphics;
     }
@@ -365,8 +375,8 @@ function PointInTriangle(eye, lastRadius, asteroid)
     var cx = faceCenterX + eye * 150;
     var cy = faceCenterY - 100;
 
-    var laserLenght = (irisRadius*irisRadius)/30,
-        laserDistortion = 0.1*(irisRadius/50);
+    var laserLenght = w/2,
+        laserDistortion = 0.1*(irisRadius/25);
 
     var v1x = cx+(irisRadius)*Math.cos(eyesAngle),
         v1y = cy+(irisRadius)*Math.sin(eyesAngle),
@@ -438,42 +448,40 @@ function tick(evt) {
     // change color based on large enough changes
     if(dataDiff>COLOR_CHANGE_THRESHOLD || dataDiff<COLOR_CHANGE_THRESHOLD) {circleHue = circleHue + dataDiff;}
 
-
-    // emit a wave for large enough changes
-    if(dataDiff > WAVE_EMIT_THRESHOLD){
-        var color = createjs.Graphics.getHSL(((waves.children.length-1)/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
+    var shouldFilter = false;
     
-        var thickness = (dataDiff*0.1+1)*WAVE_THICKNESS;
-        thickness |= 0;
-
-        // create the wave, and center it on screen:
-        var wave = new createjs.Bitmap(getWaveImg(thickness, color));
-        wave.x = faceCenterX;
-        wave.y = faceCenterY;
-        wave.regX = wave.regY = WAVE_RADIUS + thickness;
-        
-        // set the expansion speed as a factor of the value difference:
-        wave.speed = (dataDiff*0.1+1)/WAVE_SPEED;
-        
-        // set the initial scale:
-        wave.scaleX = wave.scaleY = lastRadius/WAVE_RADIUS;
-
-        // add new wave to our waves container
-        waves.addChild(wave);
+    // -------------------------------------
+    // ---------------WAVES-----------------
+    // -------------------------------------
+    if(dataDiff > WAVE_EMIT_THRESHOLD){ // emit a wave for large enough changes
+        waves.push(new Wave({ circleHue: circleHue, dataDiff: dataDiff, lastRadius: lastRadius }));
     }
 
     // animate all of our waves by scaling them up by a fixed about
-    var maxR = Math.sqrt(w*w+h*h); // the maximum radius for the waves.
-    for(var i = waves.getNumChildren()-1; i>-1; i--) {
-        wave = waves.getChildAt(i);
-        wave.scaleX = wave.scaleY = wave.scaleX+wave.speed*0.02;
+    var maxR = Math.sqrt(w*w+h*h)/2; // the maximum radius for the waves.
+    shouldFilter = false
+    for(var i = 0; i<waves.length; i++){
+        waves[i].update(i, maxR);
 
-        // check if it is offstage and therefore not visible, if so remove it
-        if(wave.scaleX*WAVE_RADIUS > maxR) {
-            waves.removeChildAt(i);
+        if(waves[i].destroyed) {
+            shouldFilter = true;
         }
     }
+    
+    if(shouldFilter) {
+        waves = waves.filter(function (element) {
+            return !element.destroyed;
+        });
+    }
 
+    // -------------------------------------
+    // -------------ASTEROIDS---------------
+    // -------------------------------------
+    if(dataDiff > 10) {
+        asteroids.push(new Asteroid(getNextAsteroid()));
+    }
+    
+    shouldFilter = false
     for(var i = 0; i<asteroids.length; i++){
         asteroids[i].update(i);
 
@@ -482,45 +490,20 @@ function tick(evt) {
         }
 
         if(asteroids[i].destroyed) {
-            asteroidsContainer.removeChild(asteroids[i].shape);
+            shouldFilter = true;
         }
     }
     
-    function isAlive(element) {
-      return !element.destroyed;
-    }
-    
-    asteroids = asteroids.filter(isAlive);
-
-    if(dataDiff > 20) {
-        asteroids.push(new Asteroid(getNextAsteroid()));
+    if(shouldFilter) {
+        asteroids = asteroids.filter(function (element) {
+            return !element.destroyed;
+        });
     }
 
     // draw the updates to stage
     stage.update();
 
     eyesAngle += EYES_SPEED * eyesMoveDirection;
-}
-
-function getWaveImg(thickness, color) {
-    // floor the thickness so we only have to deal with integer values:
-    thickness |= 0;
-    if (thickness < 1) { return null; }
-    
-    // if we already have an image with the right thickness, return it:
-    if (waveImgs[thickness]) { return waveImgs[thickness]; }
-    
-    // otherwise, draw the wave into a Shape instance:
-    var waveShape = new createjs.Shape();
-    waveShape.graphics.setStrokeStyle(thickness).beginStroke(color).drawCircle(0,0,WAVE_RADIUS);
-    
-    // cache it to create a bitmap version of the shape:
-    var r = WAVE_RADIUS+thickness;
-    waveShape.cache(-r, -r, r*2, r*2);
-    
-    // save the image into our list, and return it:
-    waveImgs[thickness] = waveShape.cacheCanvas
-    return waveShape.cacheCanvas;
 }
 
 function getNextAsteroid() {
@@ -544,12 +527,4 @@ function getNextAsteroid() {
 
         return asteroidsLine.pop();
     }
-}
-
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getRandomPlusOrMinus() {
-        return Math.random() < 0.5 ? -1 : 1;
 }

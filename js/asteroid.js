@@ -7,7 +7,7 @@ var Asteroid = function(details) {
 		sides = details.sides,
 		color = details.color, 
 		radius = getRandomInt(10,20),
-		speed = 0.005,
+		speed = 0.015,
 		shape = new createjs.Shape(),
 		destroyed = false,
 		hit = false,
@@ -41,9 +41,11 @@ var Asteroid = function(details) {
 		
 		var distance = Math.sqrt(dx*dx+dy*dy);
 
+
 		if(distance < 200){
 			this.destroyed = true;
 			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
+            asteroidsContainer.removeChild(this.shape);
 			return;
 		}
 		
@@ -51,6 +53,7 @@ var Asteroid = function(details) {
 		if(this.radius < 1){
 			this.destroyed = true;
 			createjs.Sound.play("assets/onHit.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 0.05});
+            asteroidsContainer.removeChild(this.shape);
 			return;
 		}
 
