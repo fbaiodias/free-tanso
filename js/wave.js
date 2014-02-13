@@ -1,37 +1,4 @@
 var Wave = function(details) {
-	var destroyed = false;
-
-	var color = createjs.Graphics.getHSL(((wavesContainer.children.length-1)/CIRCLES*HUE_VARIANCE+details.circleHue)%360, 100, 50);
-
-    var thickness = (details.dataDiff*0.1+1)*WAVE_THICKNESS;
-    thickness |= 0;
-
-    // create the wave, and center it on screen:
-    var shape = new createjs.Bitmap(getWaveImg(thickness, color));
-    shape.x = faceCenterX;
-    shape.y = faceCenterY;
-    shape.regX = shape.regY = WAVE_RADIUS + thickness;
-    
-    // set the expansion speed as a factor of the value difference:
-    shape.speed = (details.dataDiff*0.1+1)/WAVE_SPEED;
-    
-    // set the initial scale:
-    shape.scaleX = shape.scaleY = details.lastRadius/WAVE_RADIUS;
-
-    // add new wave to our waves container
-    wavesContainer.addChild(shape);
-
-	var update = function(id, maxR) {
-		this.shape.scaleX = this.shape.scaleY = this.shape.scaleX+this.shape.speed*0.02;
-
-        // check if it is offstage and therefore not visible, if so remove it
-        if(this.shape.scaleX*WAVE_RADIUS > maxR) {
-            this.destroyed = true;
-            wavesContainer.removeChild(this.shape);
-        }
-	};
-
-
     var getWaveImg = function (thickness, color) {
         // floor the thickness so we only have to deal with integer values:
         thickness |= 0;
@@ -52,6 +19,39 @@ var Wave = function(details) {
         waveImgs[thickness] = waveShape.cacheCanvas
         return waveShape.cacheCanvas;
     }
+
+	var destroyed = false;
+
+	var color = createjs.Graphics.getHSL(getRandomInt(0, 255), 100, 50);
+
+    var thickness = (details.dataDiff*0.1+1)*WAVE_THICKNESS;
+    thickness |= 0;
+
+    // create the wave, and center it on screen:
+    var shape = new createjs.Bitmap(getWaveImg(thickness, color));
+    shape.x = faceCenterX;
+    shape.y = faceCenterY;
+    shape.regX = shape.regY = WAVE_RADIUS + thickness;
+    
+    // set the expansion speed as a factor of the value difference:
+    shape.speed = (details.dataDiff*0.1+1)/WAVE_SPEED;
+    
+    // set the initial scale:
+    shape.scaleX = shape.scaleY = details.lastRadius/WAVE_RADIUS;
+
+    // add new wave to our waves container
+    wavesContainer.addChild(shape);
+
+	var update = function(id, maxR) {
+        // animate all of our waves by scaling them up by a fixed about
+		this.shape.scaleX = this.shape.scaleY = this.shape.scaleX+this.shape.speed*0.02;
+
+        // check if it is offstage and therefore not visible, if so remove it
+        if(this.shape.scaleX*WAVE_RADIUS > maxR) {
+            this.destroyed = true;
+            wavesContainer.removeChild(this.shape);
+        }
+	};
 
 	// Define which variables and methods can be accessed
 	return {

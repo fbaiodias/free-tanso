@@ -53,11 +53,11 @@ var asteroids = [],
     asteroidsLine = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
+var score = 0;
+
+var state = "loading";
 
 function init() {
-    if (window.top != window) {
-        document.getElementById("header").style.display = "none";
-    }
 
     // Web Audio only demo, so we register just the WebAudioPlugin and if that fails, display fail message
     if (!createjs.Sound.registerPlugins([createjs.WebAudioPlugin])) {
@@ -91,13 +91,6 @@ function init() {
     createjs.Sound.play("assets/onHit.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onStart.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
 
-}
-
-function getParameterByName(name) {
-    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
 function updateCoordinates () {
@@ -158,86 +151,10 @@ function handleLoad(evt) {
     window.onkeyup = onKeyUp;
 
     createjs.Sound.play("assets/onStart.mp3", createjs.Sound.INTERRUPT_ANY);
-}
 
-function onKeyDown(evt) {
-    if(!soundInstance) { 
-        startPlayback();
-        return;
-    }
+    document.getElementById("header").style.display = "none";
 
-    if(evt.keyCode == 39 || evt.keyCode == 65){
-        eyesMoveDirection = -1;
-        rightDown = true;
-    } else if(evt.keyCode == 37 || evt.keyCode == 68){
-        if(eyesAngle == 0) { eyesAngle = 3.14; }
-        eyesMoveDirection = +1;
-        leftDown = true;
-    } else if(evt.keyCode == 32){
-        stopSound();
-        if(wavesContainer.children.length > 0) {
-            setTimeout(startSound,500); 
-        } else {
-            startSound();
-        }
-    } else if(evt.keyCode == 27){
-        location.reload(false);
-    }
-}
-
-function onKeyUp(evt){
-    eyesMoveDirection = 0;
-
-    // Right key
-    if(evt.keyCode == 39 || evt.keyCode == 65){
-        rightDown = false;
-
-        if(leftDown) {
-            eyesMoveDirection = +1;
-        }
-    }
-    // Left key
-    else if(evt.keyCode == 37 || evt.keyCode == 68){
-        leftDown = false;
-
-        if(rightDown) {
-            eyesMoveDirection = -1;
-        }
-    }
-}
-
-function onMouseDown(evt){
-    if(!soundInstance) { 
-        startPlayback();
-        return;
-    }
-
-    if(evt.stageX > centerX){
-        eyesMoveDirection = -1;
-        rightDown = true;
-    } else {
-        if(eyesAngle == 0) { eyesAngle = 3.14; }
-        eyesMoveDirection = +1;
-        leftDown = true;
-    }
-}
-
-function onMouseUp(evt){
-    eyesMoveDirection = 0;
-
-    if(evt.stageX > centerX){
-        rightDown = false;
-
-        if(leftDown) {
-            eyesMoveDirection = +1;
-        }
-    } else {
-        leftDown = false;
-
-        if(rightDown) {
-            eyesMoveDirection = -1;
-        }
-    }
+    state = "loaded"
 }
 
 // this will start our playback in response to a user click, allowing this demo to work on mobile devices
@@ -361,42 +278,10 @@ function getLaserGraphics(eye, lastRadius) {
     }
 }
 
-function sign(p1x,p1y,p2x,p2y,p3x,p3y)
-{
-  return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
-}
-
-function PointInTriangle(eye, lastRadius, asteroid)
-{
-    var ptx = asteroid.getX(),
-        pty = asteroid.getY();
-
-    var b1, b2, b3;
-    var cx = faceCenterX + eye * 150;
-    var cy = faceCenterY - 100;
-
-    var laserLenght = w/2,
-        laserDistortion = 0.1*(irisRadius/25);
-
-    var v1x = cx+(irisRadius)*Math.cos(eyesAngle),
-        v1y = cy+(irisRadius)*Math.sin(eyesAngle),
-        v2x = cx+laserLenght*Math.cos(eyesAngle+laserDistortion),
-        v2y = cy+laserLenght*Math.sin(eyesAngle+laserDistortion),
-        v3x = cx+laserLenght*Math.cos(eyesAngle-laserDistortion),
-        v3y = cy+laserLenght*Math.sin(eyesAngle-laserDistortion);
-
-    b1 = sign(ptx,pty, v1x,v1y, v2x,v2y) < 0.0;
-    b2 = sign(ptx,pty, v2x,v2y, v3x,v3y) < 0.0;
-    b3 = sign(ptx,pty, v3x,v3y, v1x,v1y) < 0.0;
-
-  return ((b1 == b2) && (b2 == b3));
-}
-
 function tick(evt) {
     analyserNode.getFloatFrequencyData(freqFloatData);  // this gives us the dBs
     analyserNode.getByteFrequencyData(freqByteData);  // this gives us the frequency
     analyserNode.getByteTimeDomainData(timeByteData);  // this gives us the waveform
-
 
     var lastRadius = 0;  // we use this to store the radius of the last circle, making them relative to each other
     // run through our array from last to first, 0 will evaluate to false (quicker)
@@ -426,9 +311,11 @@ function tick(evt) {
         var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(faceCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
         mouthRectangles[i].graphics = g;
     }
-    leftEyeLaser.graphics = getLaserGraphics(1,lastRadius);
-    rightEyeLaser.graphics = getLaserGraphics(-1,lastRadius);
 
+    if(state === "game") {
+        leftEyeLaser.graphics = getLaserGraphics(1,lastRadius);
+        rightEyeLaser.graphics = getLaserGraphics(-1,lastRadius);
+    }
     irisRadius = lastRadius - lastRadius/5;
 
     // update our dataAverage, by removing the first element and pushing in the new last element
@@ -449,7 +336,7 @@ function tick(evt) {
     if(dataDiff>COLOR_CHANGE_THRESHOLD || dataDiff<COLOR_CHANGE_THRESHOLD) {circleHue = circleHue + dataDiff;}
 
     var shouldFilter = false;
-    
+
     // -------------------------------------
     // ---------------WAVES-----------------
     // -------------------------------------
@@ -457,7 +344,6 @@ function tick(evt) {
         waves.push(new Wave({ circleHue: circleHue, dataDiff: dataDiff, lastRadius: lastRadius }));
     }
 
-    // animate all of our waves by scaling them up by a fixed about
     var maxR = Math.sqrt(w*w+h*h)/2; // the maximum radius for the waves.
     shouldFilter = false
     for(var i = 0; i<waves.length; i++){
@@ -477,27 +363,31 @@ function tick(evt) {
     // -------------------------------------
     // -------------ASTEROIDS---------------
     // -------------------------------------
-    if(dataDiff > 10) {
-        asteroids.push(new Asteroid(getNextAsteroid()));
-    }
+    if(state === "game") {
     
-    shouldFilter = false
-    for(var i = 0; i<asteroids.length; i++){
-        asteroids[i].update(i);
-
-        if(eyesAngle != 0 && (PointInTriangle(-1, lastRadius, asteroids[i]) || PointInTriangle(1, lastRadius, asteroids[i]))) {
-            asteroids[i].hit = true;
+        if(dataDiff > 10) {
+            asteroids.push(new Asteroid(getNextAsteroid()));
         }
+        
+        shouldFilter = false
+        for(var i = 0; i<asteroids.length; i++){
+            asteroids[i].update(i);
 
-        if(asteroids[i].destroyed) {
-            shouldFilter = true;
+            if(eyesAngle != 0 && (isPointInTriangle(-1, lastRadius, asteroids[i]) || isPointInTriangle(1, lastRadius, asteroids[i]))) {
+                asteroids[i].hit = true;
+                score += 1;
+            }
+
+            if(asteroids[i].destroyed) {
+                shouldFilter = true;
+            }
         }
-    }
-    
-    if(shouldFilter) {
-        asteroids = asteroids.filter(function (element) {
-            return !element.destroyed;
-        });
+        
+        if(shouldFilter) {
+            asteroids = asteroids.filter(function (element) {
+                return !element.destroyed;
+            });
+        }
     }
 
     // draw the updates to stage
@@ -527,4 +417,35 @@ function getNextAsteroid() {
 
         return asteroidsLine.pop();
     }
+}
+
+function sign(p1x,p1y,p2x,p2y,p3x,p3y)
+{
+  return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+}
+
+function isPointInTriangle(eye, lastRadius, asteroid)
+{
+    var ptx = asteroid.getX(),
+        pty = asteroid.getY();
+
+    var b1, b2, b3;
+    var cx = faceCenterX + eye * 150;
+    var cy = faceCenterY - 100;
+
+    var laserLenght = w/2,
+        laserDistortion = 0.1*(irisRadius/25);
+
+    var v1x = cx+(irisRadius)*Math.cos(eyesAngle),
+        v1y = cy+(irisRadius)*Math.sin(eyesAngle),
+        v2x = cx+laserLenght*Math.cos(eyesAngle+laserDistortion),
+        v2y = cy+laserLenght*Math.sin(eyesAngle+laserDistortion),
+        v3x = cx+laserLenght*Math.cos(eyesAngle-laserDistortion),
+        v3y = cy+laserLenght*Math.sin(eyesAngle-laserDistortion);
+
+    b1 = sign(ptx,pty, v1x,v1y, v2x,v2y) < 0.0;
+    b2 = sign(ptx,pty, v2x,v2y, v3x,v3y) < 0.0;
+    b3 = sign(ptx,pty, v3x,v3y, v1x,v1y) < 0.0;
+
+  return ((b1 == b2) && (b2 == b3));
 }
