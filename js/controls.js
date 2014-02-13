@@ -1,8 +1,15 @@
+var wentUpAfterEnd = false;
+
 function onKeyDown(evt) {
     if(!soundInstance) { 
         startPlayback();
         state = "game";
         return;
+    }
+
+    if(state === "end" && wentUpAfterEnd) {
+        restartGame();
+        wentUpAfterEnd = false;
     }
 
     if(evt.keyCode == 39 || evt.keyCode == 65){
@@ -13,12 +20,12 @@ function onKeyDown(evt) {
         eyesMoveDirection = +1;
         leftDown = true;
     } else if(evt.keyCode == 32){
-        stopSound();
-        if(wavesContainer.children.length > 0) {
-            setTimeout(startSound,500); 
-        } else {
-            startSound();
-        }
+        //stopSound();
+        //if(wavesContainer.children.length > 0) {
+        //    setTimeout(startSound,500); 
+        //} else {
+        //    startSound();
+        //}
     } else if(evt.keyCode == 27){
         location.reload(false);
     }
@@ -26,6 +33,10 @@ function onKeyDown(evt) {
 
 function onKeyUp(evt){
     eyesMoveDirection = 0;
+
+    if(state === "end"){
+        wentUpAfterEnd = true;
+    }
 
     // Right key
     if(evt.keyCode == 39 || evt.keyCode == 65){
@@ -50,6 +61,10 @@ function onMouseDown(evt){
         startPlayback();
         state = "game";
         return;
+    }
+
+    if(state == "end") {
+        restartGame();
     }
 
     if(evt.stageX > centerX){

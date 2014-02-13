@@ -19,12 +19,10 @@ var centerX, centerY;   // variables to hold the center point, so that tick is q
 var faceCenterX, faceCenterY;   // variables to hold the center point, so that tick is quicker
 var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
+var songsPath = "songs/"; // Create a single item to load.
 var src;
-//var songs = ["05-Binrpilot-Underground.mp3"];
-var songs = ["Bohemian.mp3","CantStopNow.mp3","Puppy.mp3",
-              "Throttle-You-Make-Me.mp3","Helena-Beat.mp3",
-              "Scary-Monsters.mp3", "05-Binrpilot-Underground.mp3",
-              "Countdown.mp3", "Hexagon.mp3"]//,"Fight-Fire-with-Fire.mp3","New-Blood.mp3"]
+var songs = ["Arena_Of_Electronic_Music_-_The_Flame_-_Trigger.mp3", "Binarpilot_-_Goof.mp3",
+            "Binarpilot_-_Bend.mp3", "Binarpilot_-_aXXo.mp3", "Binarpilot_-_Tjaere_For_Alltid.mp3"];
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
 var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
@@ -41,7 +39,8 @@ var waveImgs = []; // array of wave images with different stroke thicknesses
 var EYES_SPEED = 0.1;
     eyesAngle = 0,
     eyesMoveDirection = 0;
-    irisRadius = 0;
+    irisRadius = 0,
+    eyesContainer = new createjs.Container();
 
 var leftDown = false,
     rightDown = false;
@@ -53,9 +52,13 @@ var asteroids = [],
     asteroidsLine = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
-var score = 0;
+var score = 0,
+    scoreField,
+    lives = 3
+    livesField;
 
 var state = "loading";
+
 
 function init() {
 
@@ -73,15 +76,24 @@ function init() {
     window.addEventListener('resize', updateCoordinates);
     
     // a message on our stage that we use to let the user know what is going on.  Useful when preloading.
-    messageField = new createjs.Text("Loading Audio \n\n Yep, this can take some time...", "bold 24px Arial", "#FFFFFF");
+    messageField = new createjs.Text("Loading Audio \n\n Yep, this can take some time...", "36px Tahoma", "#FFFFFF");
     messageField.maxWidth = w;
     messageField.textAlign = "center";  // NOTE this puts the registration point of the textField at the center
     messageField.x = centerX;
     messageField.y = centerY;
     stage.addChild(messageField);
+
+    scoreField = new createjs.Text("Score: ", "24px Tahoma", "#FFFFFF");
+    livesField = new createjs.Text("Lives: ", "24px Tahoma", "#FFFFFF");
+    scoreField.maxWidth = livesField.maxWidth = 200;
+    scoreField.textAlign = livesField.textAlign = "center";
+    scoreField.y = livesField.y = 50;
+    scoreField.x = 100; 
+    livesField.x = w-100;
+    
     stage.update();     //update the stage to show text
 
-    src = getParameterByName("s") || assetsPath + songs[Math.floor(Math.random() * songs.length)];
+    src = getParameterByName("s") || songsPath + songs[Math.floor(Math.random() * songs.length)];
 
     createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
     createjs.Sound.registerSound(src);  // register sound, which preloads by default
@@ -161,36 +173,36 @@ function handleLoad(evt) {
 function startPlayback() {
     if(soundInstance) {return;} // if this is defined, we've already started playing.  This is very unlikely to happen.
     
-    // we're starting, so we can remove the message
-    stage.removeChild(messageField);
+    restartGame();
 
     // start playing the sound we just loaded, looping indefinitely
     soundInstance = createjs.Sound.play(src);
 
     stage.addEventListener("dblclick", stopSound);
 
-    // add waves container to stage
+    // add containers to stage
     stage.addChild(wavesContainer);
     stage.addChild(asteroidsContainer);
+    stage.addChild(eyesContainer);
 
     // create circles so they are persistent
     for(var i=0; i<CIRCLES; i++) {
         var circle = rightEyeCircles[i] = new createjs.Shape();
         // set the composite operation so we can blend our image colors
         circle.compositeOperation = "lighter";
-        stage.addChild(circle);
+        eyesContainer.addChild(circle);
     }
     for(var i=0; i<CIRCLES; i++) {
         var circle = leftEyeCircles[i] = new createjs.Shape();
         // set the composite operation so we can blend our image colors
         circle.compositeOperation = "lighter";
-        stage.addChild(circle);
+        eyesContainer.addChild(circle);
     }
 
     for(var i=0; i<CIRCLES; i++) {
         var rectangle = mouthRectangles[i] = new createjs.Shape();
         rectangle.compositeOperation = "lighter";
-        stage.addChild(rectangle);
+        eyesContainer.addChild(rectangle);
     }
     
     var laser = leftEyeLaser = new createjs.Shape();
@@ -388,12 +400,62 @@ function tick(evt) {
                 return !element.destroyed;
             });
         }
+
+        if(lives < 1) {
+            endGame();
+        }
     }
 
-    // draw the updates to stage
-    stage.update();
+    if(soundInstance.playState == "playFinished"){
+        endGame();
+    }
 
     eyesAngle += EYES_SPEED * eyesMoveDirection;
+
+    scoreField.text = "Score: " + score;
+    livesField.text = "Lives: " + lives;
+    
+    // draw the updates to stage
+    stage.update();
+}
+
+function endGame() {
+    for(var i = 0; i<asteroids.length; i++){
+        asteroidsContainer.removeChild(asteroids[i].shape);
+    }
+    asteroids = [];
+
+    state = "end";
+
+    stage.addChild(messageField);
+    
+    stage.removeChild(eyesContainer);
+    stage.removeChild(leftEyeLaser);
+    stage.removeChild(rightEyeLaser);
+
+
+    messageField.text = "Your score was " + score + ".\n\nClick to restart!";
+}
+
+function restartGame() {
+    if(!soundInstance || soundInstance.playState != "playFinished") {
+        lives = 6;
+        score = 0;
+        state = "game";
+        eyesAngle = 0;
+
+        stage.addChild(livesField);
+        stage.addChild(scoreField);
+
+        stage.addChild(eyesContainer);
+        stage.addChild(leftEyeLaser);
+        stage.addChild(rightEyeLaser);
+
+        // we're starting, so we can remove the message
+        stage.removeChild(messageField);
+    } else {
+        location.reload(false);
+    }
 }
 
 function getNextAsteroid() {

@@ -45,7 +45,8 @@ var Asteroid = function(details) {
 		if(distance < 200){
 			this.destroyed = true;
 			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
-            asteroidsContainer.removeChild(this.shape);
+      asteroidsContainer.removeChild(this.shape);
+      lives -= 1;
 			return;
 		}
 		
@@ -53,7 +54,7 @@ var Asteroid = function(details) {
 		if(this.radius < 1){
 			this.destroyed = true;
 			createjs.Sound.play("assets/onHit.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 0.05});
-            asteroidsContainer.removeChild(this.shape);
+      asteroidsContainer.removeChild(this.shape);
 			return;
 		}
 
