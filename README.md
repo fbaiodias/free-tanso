@@ -1,4 +1,4 @@
-wtf
+free-tanso
 ===
 
 A freaky music game based on the visualizer example from SoundJS.
