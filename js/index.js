@@ -60,6 +60,8 @@ var score = 0,
     livesField,
     hurt = false;
 
+var mouthAttack = false;
+
 var state = "loading";
 
 
@@ -105,6 +107,7 @@ function init() {
     createjs.Sound.play("assets/onDestroy.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onHit.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onStart.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
+    createjs.Sound.play("assets/onAttack.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
 
 }
 
@@ -323,11 +326,13 @@ function tick(evt) {
         color = createjs.Graphics.getHSL(360-(i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
         
         var radius = (hurt) ? 10 : lastRadius;
-    
+        radius = (mouthAttack) ? radius * 7 : radius;
         var rectWidth = radius*1.5;
         var rectHeigth = radius*1.75;
         var rectRadius = rectWidth*100;
         var rectY = faceCenterY+100;
+        rectY = (mouthAttack) ? rectY - radius : rectY;
+
         var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(faceCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
         mouthRectangles[i].graphics = g;
     }

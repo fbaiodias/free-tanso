@@ -64,6 +64,10 @@ var Asteroid = function(details) {
 			return;
 		}
 
+		if(mouthAttack) {
+			this.hit = true;
+		}
+
 		if(this.hit) {
 			this.radius -= 2;
 		} else if(distance < 250) {
