@@ -56,8 +56,9 @@ var lineSide;
 
 var score = 0,
     scoreField,
-    lives = 3
-    livesField;
+    lives = 3,
+    livesField,
+    hurt = false;
 
 var state = "loading";
 
@@ -244,12 +245,14 @@ function getEyeCircleGraphics(eye, i, color, lastRadius) {
     var cx = faceCenterX + eye * 150;
     var cy = faceCenterY - 100;
 
-    if(i < CIRCLES - 1 && eyesAngle != 0) {
+    if(i < CIRCLES - 1 && eyesAngle != 0 /*&& !hurt*/) {
         cx += (irisRadius-lastRadius)*Math.cos(eyesAngle);
         cy += (irisRadius-lastRadius)*Math.sin(eyesAngle);
     }
 
-    return new createjs.Graphics().beginFill(color).drawCircle(cx,cy, lastRadius).endFill();
+
+    var radius = (hurt) ? 10 : lastRadius;
+    return new createjs.Graphics().beginFill(color).drawCircle(cx,cy, radius).endFill();
 }
 
 function getLaserGraphics(eye, lastRadius) {
@@ -318,8 +321,11 @@ function tick(evt) {
         rightEyeCircles[i].graphics = getEyeCircleGraphics(+1, i, color, lastRadius);
 
         color = createjs.Graphics.getHSL(360-(i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
-        var rectWidth = lastRadius*1.5;
-        var rectHeigth = lastRadius*1.75;
+        
+        var radius = (hurt) ? 10 : lastRadius;
+    
+        var rectWidth = radius*1.5;
+        var rectHeigth = radius*1.75;
         var rectRadius = rectWidth*100;
         var rectY = faceCenterY+100;
         var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(faceCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();

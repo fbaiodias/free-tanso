@@ -46,7 +46,13 @@ var Asteroid = function(details) {
 			this.destroyed = true;
 			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
       asteroidsContainer.removeChild(this.shape);
-      lives -= 1;
+      if(!hurt) {
+	      lives -= 1;
+	      hurt = true;
+	      setTimeout(function() {
+	      	hurt = false;
+	      }, 500);
+      }
 			return;
 		}
 		
