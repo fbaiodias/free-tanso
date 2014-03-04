@@ -21,7 +21,7 @@ var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
 var songsPath = "songs/"; // Create a single item to load.
 var src;
-var songs = ["Arena_Of_Electronic_Music_-_The_Flame_-_Trigger.mp3", "Binarpilot_-_Goof.mp3",
+var songs = ["Binarpilot_-_Goof.mp3",
             "Binarpilot_-_Bend.mp3", "Binarpilot_-_aXXo.mp3", "Binarpilot_-_Tjaere_For_Alltid.mp3"];
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
@@ -51,6 +51,8 @@ var waves = [],
 var asteroids = [],
     asteroidsLine = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
+
+var lineSide;
 
 var score = 0,
     scoreField,
@@ -439,6 +441,7 @@ function endGame() {
 
 function restartGame() {
     if(!soundInstance || soundInstance.playState != "playFinished") {
+        lineSide = getRandomInt(0,1);
         lives = 6;
         score = 0;
         state = "game";
@@ -462,7 +465,12 @@ function getNextAsteroid() {
     if (asteroidsLine.length > 0) {
         return asteroidsLine.pop();
     } else {
-        var lineSide = getRandomInt(0,1);
+        // Shall we change side?
+        if(getRandomInt(0,3) == 0) {
+            lineSide = (lineSide == 0) ? 1 : 0;
+        }
+
+
         var lineHeight = getRandomInt(0,h);
         var lineCenter = getRandomInt(0,h);
         var lineElementsNumber = getRandomInt(3,8);
