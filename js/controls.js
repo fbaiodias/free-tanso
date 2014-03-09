@@ -19,15 +19,11 @@ function onKeyDown(evt) {
         if(eyesAngle == 0) { eyesAngle = 3.14; }
         eyesMoveDirection = +1;
         leftDown = true;
-    } else if(evt.keyCode == 32){
-        //stopSound();
-        //if(wavesContainer.children.length > 0) {
-        //    setTimeout(startSound,500); 
-        //} else {
-        //    startSound();
-        //}
-        if(!mouthAttack && !hurt) {
+    } else if(evt.keyCode == 40 || evt.keyCode == 38 || evt.keyCode == 83 || evt.keyCode == 87){
+        if(!mouthAttack && !hurt && mouthCharge >= 100) {
             createjs.Sound.play("assets/onAttack.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 20});
+
+            mouthCharge = 0;
 
             mouthAttack = true;
             setTimeout(function() {
@@ -83,8 +79,10 @@ function onMouseDown(evt){
         eyesMoveDirection = +1;
         leftDown = true;
     } else {
-        if(!mouthAttack && !hurt) {
+        if(!mouthAttack && !hurt && mouthCharge >= 100) {
             createjs.Sound.play("assets/onAttack.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 20});
+
+            mouthCharge = 0;
 
             mouthAttack = true;
             setTimeout(function() {

@@ -60,7 +60,9 @@ var score = 0,
     livesField,
     hurt = false;
 
-var mouthAttack = false;
+var mouthAttack = false,
+    mouthCharge = 0,
+    mouthField;
 
 var state = "loading";
 
@@ -90,11 +92,14 @@ function init() {
 
     scoreField = new createjs.Text("Score: ", "24px Tahoma", "#FFFFFF");
     livesField = new createjs.Text("Lives: ", "24px Tahoma", "#FFFFFF");
-    scoreField.maxWidth = livesField.maxWidth = 200;
-    scoreField.textAlign = livesField.textAlign = "center";
+    mouthField = new createjs.Text("Lives: ", "24px Tahoma", "#FFFFFF");
+    scoreField.maxWidth = livesField.maxWidth = mouthField.maxWidth = 300;
+    scoreField.textAlign = livesField.textAlign = mouthField.textAlign = "center";
     scoreField.y = livesField.y = 50;
+    mouthField.y = h - 75;
     scoreField.x = 100; 
     livesField.x = w-100;
+    mouthField.x = w/2;
     
     stage.update();     //update the stage to show text
 
@@ -427,7 +432,18 @@ function tick(evt) {
 
     scoreField.text = "Score: " + score;
     livesField.text = "Lives: " + lives;
+    if(mouthCharge < 100) {
+        mouthField.text = "Charging " + mouthCharge + "%";
+    } else {
+        if (createjs.Touch.enable(stage)) {
+            mouthField.text = "Tap here to fire!!";
+        } else {
+            mouthField.text = "Press up or down to fire!!";
+        }
+    }
     
+    mouthCharge++;
+
     // draw the updates to stage
     stage.update();
 }
@@ -460,6 +476,7 @@ function restartGame() {
 
         stage.addChild(livesField);
         stage.addChild(scoreField);
+        stage.addChild(mouthField);
 
         stage.addChild(eyesContainer);
         stage.addChild(leftEyeLaser);
