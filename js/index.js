@@ -160,9 +160,9 @@ function handleLoad(evt) {
 
     // enable touch interactions if supported on the current device, and display appropriate message
     if (createjs.Touch.enable(stage)) {
-        messageField.text = "Touch to start \nand then to control the eyes";
+        messageField.text = "Touch to start \nand then to control the laser eyes\n and destroy the polygons!";
     } else {
-        messageField.text = "Click to start\n\n Use the arrow keys to rotate the eyes!";
+        messageField.text = "Click to start\n\n Use the arrow keys to rotate the laser eyes\n and destroy the polygons!!";
     }
     stage.update();     //update the stage to show text
 
