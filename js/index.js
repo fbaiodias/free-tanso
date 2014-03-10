@@ -84,8 +84,10 @@ function init() {
 
     window.addEventListener('resize', updateCoordinates);
     
+    src = getParameterByName("s") || songsPath + songs[Math.floor(Math.random() * songs.length)];
+
     // a message on our stage that we use to let the user know what is going on.  Useful when preloading.
-    messageField = new createjs.Text("Loading Audio \n\n Yep, this can take some time...", "36px Tahoma", "#FFFFFF");
+    messageField = new createjs.Text("Loading music: \n\n" + src.replace(songsPath, "").replace("_-_", " - ").replace(".mp3", "") + "\n\n\nYep, this can take some time...", "36px Tahoma", "#FFFFFF");
     messageField.maxWidth = w;
     messageField.textAlign = "center";  // NOTE this puts the registration point of the textField at the center
     messageField.x = centerX;
@@ -104,8 +106,6 @@ function init() {
     mouthField.x = w/2;
     
     stage.update();     //update the stage to show text
-
-    src = getParameterByName("s") || songsPath + songs[Math.floor(Math.random() * songs.length)];
 
     createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
     createjs.Sound.registerSound(src);  // register sound, which preloads by default
