@@ -46,7 +46,13 @@ var Asteroid = function(details) {
 			this.destroyed = true;
 			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
       asteroidsContainer.removeChild(this.shape);
-      lives -= 1;
+      if(!hurt) {
+	      lives -= 1;
+	      hurt = true;
+	      setTimeout(function() {
+	      	hurt = false;
+	      }, 500);
+      }
 			return;
 		}
 		
@@ -56,6 +62,10 @@ var Asteroid = function(details) {
 			createjs.Sound.play("assets/onHit.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 0.05});
       asteroidsContainer.removeChild(this.shape);
 			return;
+		}
+
+		if(mouthAttack) {
+			this.hit = true;
 		}
 
 		if(this.hit) {

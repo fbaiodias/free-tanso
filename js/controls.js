@@ -19,13 +19,17 @@ function onKeyDown(evt) {
         if(eyesAngle == 0) { eyesAngle = 3.14; }
         eyesMoveDirection = +1;
         leftDown = true;
-    } else if(evt.keyCode == 32){
-        //stopSound();
-        //if(wavesContainer.children.length > 0) {
-        //    setTimeout(startSound,500); 
-        //} else {
-        //    startSound();
-        //}
+    } else if(evt.keyCode == 40 || evt.keyCode == 38 || evt.keyCode == 83 || evt.keyCode == 87){
+        if(!mouthAttack && !hurt && mouthCharge >= 100) {
+            createjs.Sound.play("assets/onAttack.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 20});
+
+            mouthCharge = 0;
+
+            mouthAttack = true;
+            setTimeout(function() {
+                mouthAttack = false;
+            }, 500);
+        }
     } else if(evt.keyCode == 27){
         location.reload(false);
     }
@@ -67,13 +71,24 @@ function onMouseDown(evt){
         restartGame();
     }
 
-    if(evt.stageX > centerX){
+    if(evt.stageX > 2*w/3) {
         eyesMoveDirection = -1;
         rightDown = true;
-    } else {
+    } else if(evt.stageX < w/3) {
         if(eyesAngle == 0) { eyesAngle = 3.14; }
         eyesMoveDirection = +1;
         leftDown = true;
+    } else {
+        if(!mouthAttack && !hurt && mouthCharge >= 100) {
+            createjs.Sound.play("assets/onAttack.mp3", {interrupt: createjs.Sound.INTERRUPT_ANY, volume: 20});
+
+            mouthCharge = 0;
+
+            mouthAttack = true;
+            setTimeout(function() {
+                mouthAttack = false;
+            }, 500);
+        }
     }
 }
 

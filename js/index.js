@@ -21,7 +21,7 @@ var messageField;       // Message display field
 var assetsPath = "assets/"; // Create a single item to load.
 var songsPath = "songs/"; // Create a single item to load.
 var src;
-var songs = ["Arena_Of_Electronic_Music_-_The_Flame_-_Trigger.mp3", "Binarpilot_-_Goof.mp3",
+var songs = ["Binarpilot_-_Goof.mp3",
             "Binarpilot_-_Bend.mp3", "Binarpilot_-_aXXo.mp3", "Binarpilot_-_Tjaere_For_Alltid.mp3"];
 var soundInstance;      // the sound instance we create
 var analyserNode;       // the analyser node that allows us to visualize the audio
@@ -52,10 +52,17 @@ var asteroids = [],
     asteroidsLine = [],
     asteroidsContainer = new createjs.Container();   // container to store waves we draw coming off of circles
 
+var lineSide;
+
 var score = 0,
     scoreField,
-    lives = 3
-    livesField;
+    lives = 3,
+    livesField,
+    hurt = false;
+
+var mouthAttack = false,
+    mouthCharge = 0,
+    mouthField;
 
 var state = "loading";
 
@@ -85,11 +92,14 @@ function init() {
 
     scoreField = new createjs.Text("Score: ", "24px Tahoma", "#FFFFFF");
     livesField = new createjs.Text("Lives: ", "24px Tahoma", "#FFFFFF");
-    scoreField.maxWidth = livesField.maxWidth = 200;
-    scoreField.textAlign = livesField.textAlign = "center";
+    mouthField = new createjs.Text("Lives: ", "24px Tahoma", "#FFFFFF");
+    scoreField.maxWidth = livesField.maxWidth = mouthField.maxWidth = 300;
+    scoreField.textAlign = livesField.textAlign = mouthField.textAlign = "center";
     scoreField.y = livesField.y = 50;
+    mouthField.y = h - 75;
     scoreField.x = 100; 
     livesField.x = w-100;
+    mouthField.x = w/2;
     
     stage.update();     //update the stage to show text
 
@@ -102,6 +112,7 @@ function init() {
     createjs.Sound.play("assets/onDestroy.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onHit.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onStart.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
+    createjs.Sound.play("assets/onAttack.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
 
 }
 
@@ -149,9 +160,9 @@ function handleLoad(evt) {
 
     // enable touch interactions if supported on the current device, and display appropriate message
     if (createjs.Touch.enable(stage)) {
-        messageField.text = "Touch to start \nand then to control the eyes";
+        messageField.text = "Touch to start \nand then to control the laser eyes\n and destroy the polygons!";
     } else {
-        messageField.text = "Click to start\n\n Use the arrow keys to rotate the eyes!";
+        messageField.text = "Click to start\n\n Use the arrow keys to rotate the laser eyes\n and destroy the polygons!!";
     }
     stage.update();     //update the stage to show text
 
@@ -242,12 +253,14 @@ function getEyeCircleGraphics(eye, i, color, lastRadius) {
     var cx = faceCenterX + eye * 150;
     var cy = faceCenterY - 100;
 
-    if(i < CIRCLES - 1 && eyesAngle != 0) {
+    if(i < CIRCLES - 1 && eyesAngle != 0 /*&& !hurt*/) {
         cx += (irisRadius-lastRadius)*Math.cos(eyesAngle);
         cy += (irisRadius-lastRadius)*Math.sin(eyesAngle);
     }
 
-    return new createjs.Graphics().beginFill(color).drawCircle(cx,cy, lastRadius).endFill();
+
+    var radius = (hurt) ? 10 : lastRadius;
+    return new createjs.Graphics().beginFill(color).drawCircle(cx,cy, radius).endFill();
 }
 
 function getLaserGraphics(eye, lastRadius) {
@@ -316,10 +329,15 @@ function tick(evt) {
         rightEyeCircles[i].graphics = getEyeCircleGraphics(+1, i, color, lastRadius);
 
         color = createjs.Graphics.getHSL(360-(i/CIRCLES*HUE_VARIANCE+circleHue)%360, 100, 50);
-        var rectWidth = lastRadius*1.5;
-        var rectHeigth = lastRadius*1.75;
+        
+        var radius = (hurt) ? 10 : lastRadius;
+        radius = (mouthAttack) ? radius * 7 : radius;
+        var rectWidth = radius*1.5;
+        var rectHeigth = radius*1.75;
         var rectRadius = rectWidth*100;
         var rectY = faceCenterY+100;
+        rectY = (mouthAttack) ? rectY - radius : rectY;
+
         var g = new createjs.Graphics().beginFill(color).drawRoundRectComplex(faceCenterX-rectWidth/2,rectY, rectWidth,rectHeigth,rectRadius,rectRadius,0,0).endFill();
         mouthRectangles[i].graphics = g;
     }
@@ -414,7 +432,18 @@ function tick(evt) {
 
     scoreField.text = "Score: " + score;
     livesField.text = "Lives: " + lives;
+    if(mouthCharge < 100) {
+        mouthField.text = "Charging " + mouthCharge + "%";
+    } else {
+        if (createjs.Touch.enable(stage)) {
+            mouthField.text = "Tap here to fire!!";
+        } else {
+            mouthField.text = "Press up or down to fire!!";
+        }
+    }
     
+    mouthCharge++;
+
     // draw the updates to stage
     stage.update();
 }
@@ -439,6 +468,7 @@ function endGame() {
 
 function restartGame() {
     if(!soundInstance || soundInstance.playState != "playFinished") {
+        lineSide = getRandomInt(0,1);
         lives = 6;
         score = 0;
         state = "game";
@@ -446,6 +476,7 @@ function restartGame() {
 
         stage.addChild(livesField);
         stage.addChild(scoreField);
+        stage.addChild(mouthField);
 
         stage.addChild(eyesContainer);
         stage.addChild(leftEyeLaser);
@@ -462,7 +493,12 @@ function getNextAsteroid() {
     if (asteroidsLine.length > 0) {
         return asteroidsLine.pop();
     } else {
-        var lineSide = getRandomInt(0,1);
+        // Shall we change side?
+        if(getRandomInt(0,3) == 0) {
+            lineSide = (lineSide == 0) ? 1 : 0;
+        }
+
+
         var lineHeight = getRandomInt(0,h);
         var lineCenter = getRandomInt(0,h);
         var lineElementsNumber = getRandomInt(3,8);
