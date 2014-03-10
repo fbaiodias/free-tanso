@@ -87,7 +87,7 @@ function init() {
     src = getParameterByName("s") || songsPath + songs[Math.floor(Math.random() * songs.length)];
 
     // a message on our stage that we use to let the user know what is going on.  Useful when preloading.
-    messageField = new createjs.Text("Loading music: \n\n" + src.replace(songsPath, "").replace("_", " ").replace(".mp3", "") + "\n\n\nYep, this can take some time...", "36px Tahoma", "#FFFFFF");
+    messageField = new createjs.Text("Loading music: \n\n" + src.replace(songsPath, "").replace("_-_", " - ").replace(".mp3", "") + "\n\n\nYep, this can take some time...", "36px Tahoma", "#FFFFFF");
     messageField.maxWidth = w;
     messageField.textAlign = "center";  // NOTE this puts the registration point of the textField at the center
     messageField.x = centerX;
