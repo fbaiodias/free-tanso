@@ -66,6 +66,8 @@ var mouthAttack = false,
 
 var state = "loading";
 
+var bestScore = 0;
+
 
 function init() {
 
@@ -114,6 +116,7 @@ function init() {
     createjs.Sound.play("assets/onStart.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
     createjs.Sound.play("assets/onAttack.mp3", {interrupt:createjs.Sound.INTERRUPT_ANY, volume:0});
 
+    bestScore = localStorage.getItem("bestScore");
 }
 
 function updateCoordinates () {
@@ -430,7 +433,12 @@ function tick(evt) {
 
     eyesAngle += EYES_SPEED * eyesMoveDirection;
 
-    scoreField.text = "Score: " + score;
+    if(bestScore) {
+        scoreField.text = "Score: " + score + "\n\nBest: "+ bestScore;
+    }
+    else {
+        scoreField.text = "Score: " + score;
+    }
     livesField.text = "Lives: " + lives;
     if(mouthCharge < 100) {
         mouthField.text = "Charging " + mouthCharge + "%";
@@ -463,7 +471,14 @@ function endGame() {
     stage.removeChild(rightEyeLaser);
 
 
-    messageField.text = "Your score was " + score + ".\n\nClick to restart!";
+    bestScore = localStorage.getItem("bestScore");
+    if(score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("lbestScore", bestScore);
+        messageField.text = "New Highscore!!!\n\nYour score was " + score + ".\n\nClick to restart!";        
+    } else {
+        messageField.text = "Your score was " + score + ".\n\nClick to restart!";        
+    }
 }
 
 function restartGame() {
