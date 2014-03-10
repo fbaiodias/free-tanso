@@ -474,7 +474,7 @@ function endGame() {
     bestScore = localStorage.getItem("bestScore");
     if(score > bestScore) {
         bestScore = score;
-        localStorage.setItem("lbestScore", bestScore);
+        localStorage.setItem("bestScore", bestScore);
         messageField.text = "New Highscore!!!\n\nYour score was " + score + ".\n\nClick to restart!";        
     } else {
         messageField.text = "Your score was " + score + ".\n\nClick to restart!";        
