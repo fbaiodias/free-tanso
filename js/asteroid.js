@@ -42,7 +42,7 @@ var Asteroid = function(details) {
 		var distance = Math.sqrt(dx*dx+dy*dy);
 
 
-		if(distance < 200){
+		if(distance < yDistToCenter){
 			this.destroyed = true;
 			createjs.Sound.play("assets/onDestroy.mp3", createjs.Sound.INTERRUPT_ANY);
       asteroidsContainer.removeChild(this.shape);

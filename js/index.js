@@ -40,7 +40,9 @@ var EYES_SPEED = 0.1;
     eyesAngle = 0,
     eyesMoveDirection = 0;
     irisRadius = 0,
-    eyesContainer = new createjs.Container();
+    eyesContainer = new createjs.Container(),
+    xDistToCenter = 100,
+    yDistToCenter = 50;
 
 var leftDown = false,
     rightDown = false;
@@ -253,8 +255,8 @@ function startSound() {
 }
 
 function getEyeCircleGraphics(eye, i, color, lastRadius) {
-    var cx = faceCenterX + eye * 150;
-    var cy = faceCenterY - 100;
+    var cx = faceCenterX + eye * xDistToCenter;
+    var cy = faceCenterY - yDistToCenter;
 
     if(i < CIRCLES - 1 && eyesAngle != 0 /*&& !hurt*/) {
         cx += (irisRadius-lastRadius)*Math.cos(eyesAngle);
@@ -268,8 +270,8 @@ function getEyeCircleGraphics(eye, i, color, lastRadius) {
 
 function getLaserGraphics(eye, lastRadius) {
     if(eyesAngle != 0) {
-        var cx = faceCenterX + eye * 150;
-        var cy = faceCenterY - 100;
+        var cx = faceCenterX + eye * xDistToCenter;
+        var cy = faceCenterY - yDistToCenter;
 
         var laserLenght = w,
             laserDistortion = 0.05*(irisRadius/50);
@@ -543,8 +545,8 @@ function isPointInTriangle(eye, lastRadius, asteroid)
         pty = asteroid.getY();
 
     var b1, b2, b3;
-    var cx = faceCenterX + eye * 150;
-    var cy = faceCenterY - 100;
+    var cx = faceCenterX + eye * xDistToCenter;
+    var cy = faceCenterY - yDistToCenter;
 
     var laserLenght = w/2,
         laserDistortion = 0.1*(irisRadius/25);
